@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 CUSTOM_PACKAGES=""
@@ -19,14 +20,21 @@ openssh-sftp-server"
 ############################
 
 CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
+snmpd-nossl"
+
+# 需要启用 ttyd 时，取消下面整段的注释
+#
+# CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
 # ttyd \
 # luci-app-ttyd \
-# luci-i18n-ttyd-zh-cn \
-snmpd-nossl"
+# luci-i18n-ttyd-zh-cn"
 
 ############################
 # 网络工具
 ############################
+
+CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
+curl"
 
 # CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
 # luci-app-nlbwmon \
@@ -36,17 +44,24 @@ snmpd-nossl"
 # OpenClash
 ############################
 
-# CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
-# luci-app-openclash \
-# luci-compat \
-# kmod-tun \
-# kmod-inet-diag \
-# kmod-nft-tproxy \
-# bash \
-# curl \
-# ip-full \
-# kmod-nft-queue \
-# kmod-veth \
-# unzip"
+CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
+luci-app-openclash \
+luci-compat \
+kmod-tun \
+kmod-inet-diag \
+kmod-nft-tproxy \
+kmod-nft-queue \
+kmod-veth \
+bash \
+ip-full \
+unzip \
+ca-bundle \
+dnsmasq-full \
+ruby \
+ruby-yaml"
+
+############################
+# 输出软件包列表
+############################
 
 echo "$CUSTOM_PACKAGES"
