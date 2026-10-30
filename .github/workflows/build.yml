@@ -51,18 +51,36 @@ jobs:
       - name: Validate OpenWrt Version
         run: |
           VERSION="${{ github.event.inputs.firmware_version }}"
+
           if [ "$VERSION" = "SNAPSHOT" ]; then
-            echo "SNAPSHOT build - skip version check"
+            echo "SNAPSHOT build - APK mode"
             exit 0
           fi
-          URL="https://downloads.openwrt.org/releases/$VERSION/"
-          echo "Checking OpenWrt version: $VERSION"
-          HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" "$URL")
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "❌ ERROR: Invalid OpenWrt version"
+
+          if [[ ! "$VERSION" =~ ^([0-9]+)\. ]]; then
+            echo "Invalid version format: $VERSION"
             exit 1
           fi
-          echo "✅ Version valid"
+
+          MAJOR="${BASH_REMATCH[1]}"
+
+          if (( MAJOR < 25 )); then
+            echo "Only OpenWrt 25 and newer versions are supported"
+            exit 1
+          fi
+
+          URL="https://downloads.openwrt.org/releases/$VERSION/"
+
+          echo "Checking OpenWrt version: $VERSION"
+
+          HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" "$URL")
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: Invalid OpenWrt version"
+            exit 1
+          fi
+
+          echo "OpenWrt version valid"
 
       - name: Detect Download URL
         run: |
@@ -92,6 +110,64 @@ jobs:
           wget -q --show-progress "$TARGET_PATH$FILE" -O imagebuilder.tar.zst
           tar --use-compress-program=unzstd -xf imagebuilder.tar.zst
           ls -lah
+
+      - name: Download Latest OpenClash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          echo "===================================="
+          echo "Downloading Latest OpenClash"
+          echo "===================================="
+
+          # 定位 ImageBuilder
+          IB_DIR=$(find openwrt -maxdepth 1 -type d \
+            -name 'openwrt-imagebuilder-*' | head -n 1)
+
+          if [ -z "$IB_DIR" ]; then
+            echo "ERROR: ImageBuilder directory not found"
+            exit 1
+          fi
+
+          # 创建本地 APK 仓库目录
+          mkdir -p "$IB_DIR/packages"
+
+          # 获取 GitHub 最新 Release
+          RELEASE_JSON=$(curl -fsSL \
+            --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/vernesong/OpenClash/releases/latest)
+
+          # 获取最新 APK 安装包
+          ASSET=$(echo "$RELEASE_JSON" | jq -c \
+            '[.assets[] | select(.name | startswith("luci-app-openclash-") and endswith(".apk"))][0] // empty')
+
+          if [ -z "$ASSET" ]; then
+            echo "ERROR: OpenClash APK not found in latest Release"
+            exit 1
+          fi
+
+          VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+          FILE=$(echo "$ASSET" | jq -r '.name')
+          URL=$(echo "$ASSET" | jq -r '.browser_download_url')
+
+          echo "OpenClash Version: $VERSION"
+          echo "Package: $FILE"
+
+          # 下载到 ImageBuilder 本地软件包目录
+          curl -fL --retry 3 "$URL" \
+            -o "$IB_DIR/packages/$FILE"
+
+          if [ ! -s "$IB_DIR/packages/$FILE" ]; then
+            echo "ERROR: Download failed"
+            exit 1
+          fi
+
+          echo "OpenClash downloaded successfully"
+
+          ls -lh "$IB_DIR/packages/"
 
       # ====================== IP 配置 ======================
       - name: Generate network config (IP UI)
