@@ -16,9 +16,9 @@ on:
         required: true
         default: "10.0.0.2"
       dns:
-        description: "DNS (e.g. 10.0.0.7)"
+        description: "DNS (e.g. 10.0.0.2)"
         required: true
-        default: "10.0.0.2"
+        default: "223.5.5.5"
       ip_mode:
         description: "IP Mode (static or dhcp)"
         required: true
