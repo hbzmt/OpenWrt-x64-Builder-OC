@@ -225,24 +225,41 @@ jobs:
           file files/etc/openclash/core/clash_meta
 
 
-      # ====================== 安装自定义 APK ======================
+      # ====================== 准备自定义 APK ======================
       - name: Prepare Custom APK Packages
         run: |
           set -e
 
-          echo "Preparing custom APK packages..."
+          IB_DIR=$(find openwrt -maxdepth 1 -type d -name 'openwrt-imagebuilder-*' | head -n 1)
 
-          mkdir -p openwrt/openwrt-imagebuilder-*/packages
+          if [ -z "$IB_DIR" ]; then
+            echo "ERROR: ImageBuilder directory not found"
+            exit 1
+          fi
 
-          for APK in packages/*.apk; do
-            [ -f "$APK" ] || continue
+          mkdir -p "$IB_DIR/packages"
 
-            echo "Copying: $APK"
-            cp "$APK" openwrt/openwrt-imagebuilder-*/packages/
-          done
+          # 复制自定义 APK
+          cp packages/*.apk "$IB_DIR/packages/"
 
-          echo "Custom APK files:"
-          ls -lh openwrt/openwrt-imagebuilder-*/packages/*.apk
+          # 找到 ImageBuilder 自带的 APK 工具
+          APK_TOOL="$IB_DIR/staging_dir/host/bin/apk"
+
+          if [ ! -x "$APK_TOOL" ]; then
+            echo "ERROR: ImageBuilder APK tool not found"
+            exit 1
+          fi
+
+          # 为本地 APK 生成软件包索引
+          cd "$IB_DIR/packages"
+
+          "$APK_TOOL" mkndx \
+            --allow-untrusted \
+            --output packages.adb \
+            *.apk
+
+          echo "===== Custom APK repository ====="
+          ls -lh
 
       # ====================== IP 配置 ======================
       - name: Generate network config (IP UI)
