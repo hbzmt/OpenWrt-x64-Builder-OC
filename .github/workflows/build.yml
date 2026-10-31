@@ -294,12 +294,13 @@ jobs:
           echo "CUSTOM_PACKAGES=$CUSTOM_PACKAGES"
 
           echo "Starting build with ROOTFS_PARTSIZE=$ROOTFS_SIZE ..."
-          
+
           make image \
             PROFILE="generic" \
             ROOTFS_PARTSIZE=$ROOTFS_SIZE \
             PACKAGES="$CUSTOM_PACKAGES" \
             FILES="files"
+            DISABLED_SERVICES=""
 
           echo "Build finished"
           ls -lh bin/targets/x86/64/
