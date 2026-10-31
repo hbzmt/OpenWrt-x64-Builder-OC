@@ -224,6 +224,26 @@ jobs:
           ls -lh files/etc/openclash/core/clash_meta
           file files/etc/openclash/core/clash_meta
 
+
+      # ====================== 安装自定义 APK ======================
+      - name: Prepare Custom APK Packages
+        run: |
+          set -e
+
+          echo "Preparing custom APK packages..."
+
+          mkdir -p openwrt/openwrt-imagebuilder-*/packages
+
+          for APK in packages/*.apk; do
+            [ -f "$APK" ] || continue
+
+            echo "Copying: $APK"
+            cp "$APK" openwrt/openwrt-imagebuilder-*/packages/
+          done
+
+          echo "Custom APK files:"
+          ls -lh openwrt/openwrt-imagebuilder-*/packages/*.apk
+
       # ====================== IP 配置 ======================
       - name: Generate network config (IP UI)
         run: |
