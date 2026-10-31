@@ -34,7 +34,8 @@ snmpd-nossl"
 ############################
 
 CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
-curl"
+curl \
+bxplug"
 
 # CUSTOM_PACKAGES="$CUSTOM_PACKAGES \
 # luci-app-nlbwmon \
