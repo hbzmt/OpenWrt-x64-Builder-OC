@@ -317,7 +317,6 @@ jobs:
             ROOTFS_PARTSIZE=$ROOTFS_SIZE \
             PACKAGES="$CUSTOM_PACKAGES" \
             FILES="files"
-            DISABLED_SERVICES=""
 
           echo "Build finished"
           ls -lh bin/targets/x86/64/
