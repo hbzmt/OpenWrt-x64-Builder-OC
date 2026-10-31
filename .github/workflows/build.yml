@@ -169,6 +169,61 @@ jobs:
 
           ls -lh "$IB_DIR/packages/"
 
+
+      - name: Download Latest Smart Kernel
+        run: |
+          set -e
+
+          echo "===================================="
+          echo "Downloading Latest Smart Kernel"
+          echo "===================================="
+
+          # Smart 内核版本查询地址
+          VERSION_URL="https://github.com/vernesong/mihomo/releases/download/Prerelease-Alpha/version.txt"
+
+          # 获取最新版本
+          SMART_VERSION=$(curl -fsSL --retry 3 "$VERSION_URL" | tr -d '\r\n')
+
+          if [ -z "$SMART_VERSION" ]; then
+            echo "ERROR: Failed to get Smart kernel version"
+            exit 1
+          fi
+
+          echo "Smart Kernel Version: $SMART_VERSION"
+
+          # x86-64 Linux Smart 内核
+          KERNEL_NAME="mihomo-linux-amd64-v2-go120"
+
+          DOWNLOAD_URL="https://github.com/vernesong/mihomo/releases/download/Prerelease-Alpha/${KERNEL_NAME}-${SMART_VERSION}.gz"
+
+          # 创建 OpenClash 内核目录
+          mkdir -p files/etc/openclash/core
+
+          # 下载内核
+          curl -fL --retry 3 \
+            "$DOWNLOAD_URL" \
+            -o /tmp/mihomo-smart.gz
+
+          # 解压并直接命名为 OpenClash 需要的名称
+          gzip -dc /tmp/mihomo-smart.gz \
+            > files/etc/openclash/core/clash_meta
+
+          # 设置可执行权限
+          chmod 755 files/etc/openclash/core/clash_meta
+
+          # 检查文件
+          if [ ! -s files/etc/openclash/core/clash_meta ]; then
+            echo "ERROR: Smart kernel installation failed"
+            exit 1
+          fi
+
+          echo "===================================="
+          echo "Smart Kernel Installed"
+          echo "===================================="
+
+          ls -lh files/etc/openclash/core/clash_meta
+          file files/etc/openclash/core/clash_meta
+
       # ====================== IP 配置 ======================
       - name: Generate network config (IP UI)
         run: |
