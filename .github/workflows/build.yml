@@ -244,7 +244,7 @@ jobs:
             exit 1
           fi
 
-          cp packages/bxplug-2.0.12-x86_64.apk "$IB_DIR/packages/"
+          cp packages/bxplug-2.0.12-x86_64.apk "$IB_DIR/packages/bxplug-2.0.12.apk"
 
           echo "===== Custom APK ready ====="
           ls -lh "$IB_DIR/packages/"*.apk
