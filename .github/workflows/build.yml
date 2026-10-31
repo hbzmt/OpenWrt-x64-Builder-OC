@@ -224,7 +224,6 @@ jobs:
           ls -lh files/etc/openclash/core/clash_meta
           file files/etc/openclash/core/clash_meta
 
-
       # ====================== 准备自定义 APK ======================
       - name: Prepare Custom APK Packages
         run: |
@@ -239,27 +238,16 @@ jobs:
 
           mkdir -p "$IB_DIR/packages"
 
-          # 复制自定义 APK
-          cp packages/*.apk "$IB_DIR/packages/"
-
-          # 找到 ImageBuilder 自带的 APK 工具
-          APK_TOOL="$IB_DIR/staging_dir/host/bin/apk"
-
-          if [ ! -x "$APK_TOOL" ]; then
-            echo "ERROR: ImageBuilder APK tool not found"
+          # 检查并复制自定义 APK
+          if [ ! -f packages/bxplug-2.0.12-x86_64.apk ]; then
+            echo "ERROR: bxplug APK not found!"
             exit 1
           fi
 
-          # 为本地 APK 生成软件包索引
-          cd "$IB_DIR/packages"
+          cp packages/bxplug-2.0.12-x86_64.apk "$IB_DIR/packages/"
 
-          "$APK_TOOL" mkndx \
-            --allow-untrusted \
-            --output packages.adb \
-            *.apk
-
-          echo "===== Custom APK repository ====="
-          ls -lh
+          echo "===== Custom APK ready ====="
+          ls -lh "$IB_DIR/packages/"*.apk
 
       # ====================== IP 配置 ======================
       - name: Generate network config (IP UI)
