@@ -170,42 +170,65 @@ jobs:
           ls -lh "$IB_DIR/packages/"
 
 
-      - name: Download Latest Smart Kernel
+      - name: Download Latest Meta Kernel
         run: |
           set -e
 
           echo "===================================="
-          echo "Downloading Latest Smart Kernel"
+          echo "Downloading Latest Meta Kernel"
           echo "===================================="
 
-          # Smart 内核版本查询地址
-          VERSION_URL="https://github.com/vernesong/mihomo/releases/download/Prerelease-Alpha/version.txt"
+          # Meta 官方仓库，获取最新正式 Release
+          API_URL="https://api.github.com/repos/MetaCubeX/mihomo/releases/latest"
 
-          # 获取最新版本
-          SMART_VERSION=$(curl -fsSL --retry 3 "$VERSION_URL" | tr -d '\r\n')
+          RELEASE_JSON=$(curl -fsSL --retry 3 "$API_URL")
 
-          if [ -z "$SMART_VERSION" ]; then
-            echo "ERROR: Failed to get Smart kernel version"
+          if [ -z "$RELEASE_JSON" ]; then
+            echo "ERROR: Failed to get Meta kernel release"
             exit 1
           fi
 
-          echo "Smart Kernel Version: $SMART_VERSION"
+          # 获取最新正式版版本号
+          META_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
 
-          # x86-64 Linux Smart 内核
-          KERNEL_NAME="mihomo-linux-amd64-v2-go120"
+          if [ -z "$META_VERSION" ] || [ "$META_VERSION" = "null" ]; then
+            echo "ERROR: Failed to get Meta kernel version"
+            exit 1
+          fi
 
-          DOWNLOAD_URL="https://github.com/vernesong/mihomo/releases/download/Prerelease-Alpha/${KERNEL_NAME}-${SMART_VERSION}.gz"
+          echo "Meta Kernel Version: $META_VERSION"
+
+          # x86-64 基础指令集版本，兼容性优先
+          ASSET_NAME="mihomo-linux-amd64-v1-${META_VERSION}.gz"
+
+          # 从 Release 中获取对应下载地址
+          DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r \
+            --arg NAME "$ASSET_NAME" \
+            '.assets[] | select(.name == $NAME) | .browser_download_url' | head -n 1)
+
+          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+            echo "ERROR: Meta kernel asset not found: $ASSET_NAME"
+            echo "Available Linux AMD64 assets:"
+            echo "$RELEASE_JSON" | jq -r \
+              '.assets[].name | select(startswith("mihomo-linux-amd64"))'
+            exit 1
+          fi
+
+          echo "Download File: $ASSET_NAME"
 
           # 创建 OpenClash 内核目录
           mkdir -p files/etc/openclash/core
 
-          # 下载内核
+          # 下载 Meta 内核
           curl -fL --retry 3 \
             "$DOWNLOAD_URL" \
-            -o /tmp/mihomo-smart.gz
+            -o /tmp/mihomo-meta.gz
 
-          # 解压并直接命名为 OpenClash 需要的名称
-          gzip -dc /tmp/mihomo-smart.gz \
+          # 检查压缩包
+          gzip -t /tmp/mihomo-meta.gz
+
+          # 解压并使用 OpenClash 识别的内核名称
+          gzip -dc /tmp/mihomo-meta.gz \
             > files/etc/openclash/core/clash_meta
 
           # 设置可执行权限
@@ -213,12 +236,12 @@ jobs:
 
           # 检查文件
           if [ ! -s files/etc/openclash/core/clash_meta ]; then
-            echo "ERROR: Smart kernel installation failed"
+            echo "ERROR: Meta kernel installation failed"
             exit 1
           fi
 
           echo "===================================="
-          echo "Smart Kernel Installed"
+          echo "Meta Kernel Installed Successfully"
           echo "===================================="
 
           ls -lh files/etc/openclash/core/clash_meta
